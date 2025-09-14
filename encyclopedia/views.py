@@ -1,4 +1,6 @@
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse
 
 from . import util
 
@@ -48,3 +50,32 @@ def entry(request, title):
         "title": case_title,
         "content": content,
     })
+
+
+def search(request):
+    """Render a specific encyclopedia entry by query or show search
+    results.
+
+    If the query exactly matches an entry title (case-insensitively),
+    redirect to that entry's page. Otherwise, render a search results
+    page listing all encyclopedia entries containing the query as a
+    case-insensitively substring.  that have
+    If no entries match, render a search results page with a not entries
+    found message.
+    
+    :param request: The HTTP request object.
+    :type request: HttpRequest
+    :return: The HTTP response with rendered entry page or results page.
+    :rtype: HttpResponse
+    """
+    entries = util.list_entries()
+    query = request.GET.get("q").strip()
+    results = []
+
+    for ent in entries:
+        if query.lower() == ent.lower():
+            return HttpResponseRedirect(reverse('encyclopedia:entry', args=[ent]))
+        elif query.lower() in ent.lower():
+            results.append(ent)
+
+    return render(request, "encyclopedia/search.html", {"results": results})
