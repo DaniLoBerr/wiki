@@ -1,8 +1,27 @@
+from django import forms
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
 from . import util
+
+
+class NewEntryForm(forms.Form):
+    """Form for creating a new entry with a title and content. Extends
+    forms.Form.
+    
+    :attr title: The title of the entry, displayed as a single-line text
+        input with a "Title" label.
+    :type title: CharField
+    :attr content: The content of the entry, displayed as a multi-line
+        textarea with a "Content" label.
+    :type content: CharField
+    """
+    title = forms.CharField(label="Title")
+    content = forms.CharField(
+        label="Content",
+        widget=forms.Textarea()
+    )
 
 
 def index(request):
@@ -44,7 +63,9 @@ def entry(request, title):
     content = util.get_entry(case_title)
 
     if content is None:
-        return render(request, "encyclopedia/error.html")
+        return render(request, "encyclopedia/error.html", {
+            "content": "The requested page was not found."
+        })
 
     return render(request, "encyclopedia/entry.html", {
         "title": case_title,
@@ -79,3 +100,41 @@ def search(request):
             results.append(ent)
 
     return render(request, "encyclopedia/search.html", {"results": results})
+
+
+def new(request):
+    """Handle creation of a new encyclopedia entry.
+
+    On GET, renders a form for creating a new entry.
+    On POST, validates the form, checks for duplicates, saves the entry,
+    and redirects to the entry page. If a duplicate exists, renders an
+    error page.
+
+    :param request: The HTTP request object.
+    :type request: HttpRequest
+    :return: HTTP response rendering the form, error page, or redirect
+        to the new entry wit entry page or results page.
+    :rtype: HttpResponse
+    """
+    if request.method == "POST":
+        form = NewEntryForm(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data["title"]
+            content = form.cleaned_data["content"]
+            entries = util.list_entries()
+
+            for ent in entries:
+                if ent.lower() == title.lower():
+                    return render(request, "encyclopedia/error.html", {
+                        "content": f"{title} entry already exists."
+                    })
+            
+            util.save_entry(title, content)
+
+            return HttpResponseRedirect(
+                reverse('encyclopedia:entry', args=[title])
+            )
+
+    return render(request, "encyclopedia/new.html", {
+        "form": NewEntryForm(),
+    })
