@@ -2,6 +2,7 @@ from django import forms
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from random import choice
 
 from . import util
 
@@ -182,3 +183,24 @@ def edit(request, title):
         "title": title,
         "content": NewEditForm(initial={"content": util.get_entry(title)}),
     })
+
+
+def random(request):
+    """Redirect to a random encyclopedia entry.
+
+    Picks a random entry from the list of all entries and redirects the
+    user to its page. If there are no entries, displays an error page.
+    
+    :param request: The HTTP request object.
+    :type request: HttpRequest
+    :return: HTTP response rendering a random entry or an error page.
+    :rtype: HttpResponse
+    """
+    entries = util.list_entries()
+    if not entries:
+        return render(request, "encyclopedia/error.html", {
+            "content": "No entries found."
+        })
+    return HttpResponseRedirect(
+        reverse('encyclopedia:entry', args=[choice(entries)])
+    )
