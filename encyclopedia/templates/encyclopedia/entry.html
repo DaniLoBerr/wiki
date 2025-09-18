@@ -6,4 +6,5 @@
 
 {% block body %}
     {{ content }}
+    <a href="{% url 'encyclopedia:edit' title %}">Edit entry</a>
 {% endblock %}

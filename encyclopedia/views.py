@@ -24,6 +24,20 @@ class NewEntryForm(forms.Form):
     )
 
 
+class NewEditForm(forms.Form):
+    """Form for editing the content of an existing entry. Extends
+    forms.Form.
+    
+    :attr content: A multi-line text area labeled "Edit content" for
+        modifying the entry's text.
+    :type content: CharField
+    """
+    content = forms.CharField(
+        label="Edit content",
+        widget=forms.Textarea(),
+    )
+
+
 def index(request):
     """Render the homepage displaying a list of all encyclopedia entries.
 
@@ -113,7 +127,7 @@ def new(request):
     :param request: The HTTP request object.
     :type request: HttpRequest
     :return: HTTP response rendering the form, error page, or redirect
-        to the new entry wit entry page or results page.
+        to the new entry page or results page.
     :rtype: HttpResponse
     """
     if request.method == "POST":
@@ -137,4 +151,34 @@ def new(request):
 
     return render(request, "encyclopedia/new.html", {
         "form": NewEntryForm(),
+    })
+
+
+def edit(request, title):
+    """Edit an existing encyclopedia entry.
+
+    On GET, displays a form pre-populated with the entry's content.
+    On POST, validates the submitted form, updates the entry, and
+    redirects to the entry page.
+
+    :param request: The HTTP request object.
+    :type request: HttpRequest
+    :param title: The title of the encyclopedia entry to edit.
+    :type title: str
+    :return: HTTP response rendering the edit form or redirect
+        to the updated entry page.
+    :rtype: HttpResponse
+    """
+    if request.method == "POST":
+        form = NewEditForm(request.POST)
+        if form.is_valid():
+            content = form.cleaned_data["content"]
+            util.save_entry(title, content)
+            return HttpResponseRedirect(
+                reverse('encyclopedia:entry', args=[title])
+            )
+
+    return render(request, "encyclopedia/edit.html", {
+        "title": title,
+        "content": NewEditForm(initial={"content": util.get_entry(title)}),
     })
