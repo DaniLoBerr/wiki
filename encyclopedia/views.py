@@ -71,6 +71,8 @@ def entry(request, title):
     :return: The HTTP response with rendered entry page or error page.
     :rtype: HttpResponse
     """
+    case_title = None
+
     for ent in util.list_entries():
         if ent.casefold() == title.casefold():
             case_title = ent
