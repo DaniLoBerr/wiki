@@ -2,6 +2,7 @@ from django import forms
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from markdown2 import markdown
 from random import choice
 
 from . import util
@@ -60,8 +61,8 @@ def entry(request, title):
 
     Searches for an entry matching the given title against the fetched
     list of all entries case-insensitively.
-    If found, it retrieves and renders the entry content. Otherwise, it
-    renders a error page.
+    If found, it retrieves and renders the entry content converted to
+    HTML. Otherwise, it renders a error page.
 
     :param request: The HTTP request object.
     :type request: HttpRequest
@@ -84,7 +85,7 @@ def entry(request, title):
 
     return render(request, "encyclopedia/entry.html", {
         "title": case_title,
-        "content": content,
+        "content": markdown(content),
     })
 
 
